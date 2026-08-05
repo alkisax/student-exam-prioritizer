@@ -1,0 +1,44 @@
+paths:
+  /todo:
+    get:
+      summary: Get all todos
+      tags:
+        - todo
+      responses:
+        '200':
+          description: todos fetched successfully
+  /todo/create-todo:
+    post:
+      summary: create
+      tags:
+        - todo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                todo:
+                  type: string
+                user:
+                  type: string
+                completed:
+                  type: boolean
+      responses:
+        '201':
+          description: todo created
+  /todo/{id}:
+    get:
+      summary: get todo by id
+      tags:
+        - todo
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Todo fetched

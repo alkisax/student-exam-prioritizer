@@ -1,0 +1,19 @@
+### Create admin
+POST http://localhost:3019/api/users
+Content-Type: application/json
+
+{
+  "username": "antonio",
+  "password": "AdminPass1!",
+  "name": "Antonio",
+  "role": "ADMIN"
+}
+
+### Login admin
+POST http://localhost:3019/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "antonio",
+  "password": "AdminPass1!"
+}

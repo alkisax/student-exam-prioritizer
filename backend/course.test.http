@@ -1,0 +1,334 @@
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhNzJlMTdkMWRjNDgxZTFhMzJiOTVlYiIsInVzZXJuYW1lIjoiYW50b25pbyIsIm5hbWUiOiJBbnRvbmlvIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzg2MDAyMzE3LCJleHAiOjE3ODYwMDU5MTd9.BMQrhFNwkNHufoud0VzBu7qzE_GoZyiqK3bBE9VMrU8
+
+### Login
+POST http://localhost:3019/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "antonio",
+  "password": "AdminPass1!"
+}
+
+### Δημιουργία μαθήματος / πρώτο snapshot
+POST http://localhost:3019/api/courses/snapshot
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Λατινικά",
+  "schoolYear": "2026-2027",
+  "students": [
+    {
+      "name": "Alejandro García",
+      "finalGrade": 7.8,
+      "criteria": [
+        {
+          "name": "1.1",
+          "grade": 6.89
+        },
+        {
+          "name": "1.2",
+          "grade": 7.94
+        },
+        {
+          "name": "2.1",
+          "grade": 10
+        }
+      ]
+    },
+    {
+      "name": "Lucía Fernández",
+      "finalGrade": 4.5,
+      "criteria": [
+        {
+          "name": "1.1",
+          "grade": 3
+        },
+        {
+          "name": "1.2",
+          "grade": null
+        },
+        {
+          "name": "2.1",
+          "grade": 5
+        }
+      ]
+    }
+  ]
+}
+
+### Νέο snapshot - αλλάζει μόνο η Lucía στο 1.2
+POST http://localhost:3019/api/courses/snapshot
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Λατινικά",
+  "schoolYear": "2026-2027",
+  "students": [
+    {
+      "name": "Alejandro García",
+      "finalGrade": 7.8,
+      "criteria": [
+        {
+          "name": "1.1",
+          "grade": 6.89
+        },
+        {
+          "name": "1.2",
+          "grade": 7.94
+        },
+        {
+          "name": "2.1",
+          "grade": 10
+        }
+      ]
+    },
+    {
+      "name": "Lucía Fernández",
+      "finalGrade": 4.8,
+      "criteria": [
+        {
+          "name": "1.1",
+          "grade": 3
+        },
+        {
+          "name": "1.2",
+          "grade": 4
+        },
+        {
+          "name": "2.1",
+          "grade": 5
+        }
+      ]
+    }
+  ]
+}
+
+### Νέο snapshot - αλλάζουν δύο criteria της Lucía
+POST http://localhost:3019/api/courses/snapshot
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Λατινικά",
+  "schoolYear": "2026-2027",
+  "students": [
+    {
+      "name": "Alejandro García",
+      "finalGrade": 7.8,
+      "criteria": [
+        {
+          "name": "1.1",
+          "grade": 6.89
+        },
+        {
+          "name": "1.2",
+          "grade": 7.94
+        },
+        {
+          "name": "2.1",
+          "grade": 10
+        }
+      ]
+    },
+    {
+      "name": "Lucía Fernández",
+      "finalGrade": 5.2,
+      "criteria": [
+        {
+          "name": "1.1",
+          "grade": 4
+        },
+        {
+          "name": "1.2",
+          "grade": 5
+        },
+        {
+          "name": "2.1",
+          "grade": 5
+        }
+      ]
+    }
+  ]
+}
+
+### Prioritize students
+GET http://localhost:3019/api/courses/6a7437441d74bcda91958fa1/prioritize
+Authorization: Bearer {{token}}
+
+
+### 1. Δημιουργία νέου μαθήματος
+### Μόνο ο μαθητής 1 έχει εξεταστεί, και μόνο στο 2.1
+POST http://localhost:3019/api/courses/snapshot
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Αρχαία Ελληνικά",
+  "schoolYear": "2026-2027",
+  "students": [
+    {
+      "name": "Student 1",
+      "finalGrade": null,
+      "criteria": [
+        {
+          "name": "1.1",
+          "grade": null
+        },
+        {
+          "name": "2.1",
+          "grade": 7
+        }
+      ]
+    },
+    {
+      "name": "Student 2",
+      "finalGrade": null,
+      "criteria": [
+        {
+          "name": "1.1",
+          "grade": null
+        },
+        {
+          "name": "2.1",
+          "grade": null
+        }
+      ]
+    },
+    {
+      "name": "Student 3",
+      "finalGrade": null,
+      "criteria": [
+        {
+          "name": "1.1",
+          "grade": null
+        },
+        {
+          "name": "2.1",
+          "grade": null
+        }
+      ]
+    },
+    {
+      "name": "Student 4",
+      "finalGrade": null,
+      "criteria": [
+        {
+          "name": "1.1",
+          "grade": null
+        },
+        {
+          "name": "2.1",
+          "grade": null
+        }
+      ]
+    },
+    {
+      "name": "Student 5",
+      "finalGrade": null,
+      "criteria": [
+        {
+          "name": "1.1",
+          "grade": null
+        },
+        {
+          "name": "2.1",
+          "grade": null
+        }
+      ]
+    }
+  ]
+}
+
+### 2. Δεύτερο snapshot
+### Ο Student 2 εξετάζεται και στα δύο criteria, αλλά κάτω από τη βάση
+POST http://localhost:3019/api/courses/snapshot
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Αρχαία Ελληνικά",
+  "schoolYear": "2026-2027",
+  "students": [
+    {
+      "name": "Student 1",
+      "finalGrade": null,
+      "criteria": [
+        {
+          "name": "1.1",
+          "grade": null
+        },
+        {
+          "name": "2.1",
+          "grade": 7
+        }
+      ]
+    },
+    {
+      "name": "Student 2",
+      "finalGrade": 3.5,
+      "criteria": [
+        {
+          "name": "1.1",
+          "grade": 3
+        },
+        {
+          "name": "2.1",
+          "grade": 4
+        }
+      ]
+    },
+    {
+      "name": "Student 3",
+      "finalGrade": null,
+      "criteria": [
+        {
+          "name": "1.1",
+          "grade": null
+        },
+        {
+          "name": "2.1",
+          "grade": null
+        }
+      ]
+    },
+    {
+      "name": "Student 4",
+      "finalGrade": null,
+      "criteria": [
+        {
+          "name": "1.1",
+          "grade": null
+        },
+        {
+          "name": "2.1",
+          "grade": null
+        }
+      ]
+    },
+    {
+      "name": "Student 5",
+      "finalGrade": null,
+      "criteria": [
+        {
+          "name": "1.1",
+          "grade": null
+        },
+        {
+          "name": "2.1",
+          "grade": null
+        }
+      ]
+    }
+  ]
+}
+
+### 3. Βρες το νέο course για να πάρεις το id
+GET http://localhost:3019/api/courses
+Authorization: Bearer {{token}}
+
+### 4. Prioritize
+### Αντικατάστησε το COURSE_ID με το id των Αρχαίων Ελληνικών
+GET http://localhost:3019/api/courses/6a743bcb8c1df8a41db9e638/prioritize
+Authorization: Bearer {{token}}

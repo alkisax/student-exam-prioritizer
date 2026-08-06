@@ -9,6 +9,7 @@ import logFromFrontRoutes from "./utils/logFromFront/logFromFront.routes";
 
 import authRoutes from "./login/routes/auth.routes";
 import userRoutes from "./login/routes/user.routes";
+import courseRoutes from "./course/course.routes";
 
 export const app = express();
 app.set("trust proxy", 1);
@@ -37,6 +38,8 @@ app.get("/health", (_req: Request, res: Response) => {
 app.use("/api/log-from-front", logFromFrontRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+
+app.use("/api/courses", courseRoutes);
 
 
 // STATIC FRONTEND

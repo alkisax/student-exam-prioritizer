@@ -5,17 +5,47 @@ import * as XLSX from "xlsx";
 
 interface Criterion {
   name: string;
-  grade: unknown;
+  grade: number | null;
 }
 
 interface Student {
-  name: unknown;
-  grade: unknown;
-  criteriaGroups: Record<string, Criterion[]>;
+  name: string;
+  finalGrade: number | null;
+  criteria: Criterion[];
 }
 
+interface PrioritizedStudent extends Student {
+  estimatedExamCount: number;
+  priorityScore: number;
+  notes: string[];
+}
+
+const COURSE_NAME = "Excel Test Course";
+const SCHOOL_YEAR = "2026-2027";
+const API_URL = "http://localhost:3019/api/courses";
+
+const parseNumber = (value: unknown): number | null => {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+
+  if (typeof value === "number") {
+    return value;
+  }
+
+  const normalizedValue = String(value)
+    .trim()
+    .replace(",", ".");
+
+  const numberValue = Number(normalizedValue);
+
+  return Number.isNaN(numberValue) ? null : numberValue;
+};
+
 const formatValue = (value: unknown) => {
-  if (value === undefined || value === null || value === "") return "—";
+  if (value === undefined || value === null || value === "") {
+    return "—";
+  }
 
   if (typeof value === "number") {
     return new Intl.NumberFormat("es-ES", {
@@ -27,36 +57,42 @@ const formatValue = (value: unknown) => {
 };
 
 const StudentPrioritizer = () => {
-  // Εδώ αποθηκεύουμε τους μαθητές που διαβάσαμε από το Excel.
   const [students, setStudents] = useState<Student[]>([]);
+  const [prioritizedStudents, setPrioritizedStudents] = useState<
+    PrioritizedStudent[]
+  >([]);
+
+  const [courseId, setCourseId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isPrioritizing, setIsPrioritizing] = useState(false);
+  const [message, setMessage] = useState("");
 
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    // Παίρνουμε το πρώτο αρχείο που επέλεξε ο χρήστης.
     const file = event.target.files?.[0];
 
     if (!file) return;
 
-    // Φορτώνουμε το αρχείο στη μνήμη και το μετατρέπουμε σε workbook.
+    setMessage("");
+    setPrioritizedStudents([]);
+
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer);
 
-    // Παίρνουμε το πρώτο φύλλο του Excel.
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
 
-    // Μετατρέπουμε κάθε γραμμή του φύλλου σε array.
-    // raw: false κρατά τις εμφανιζόμενες τιμές των κελιών.
     const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
       header: 1,
       raw: false,
       defval: null,
     });
 
-    // Βρίσκουμε τη γραμμή που περιέχει τις επικεφαλίδες.
     const headerRowIndex = rows.findIndex((row) =>
-      row.some((cell) => String(cell).trim() === "Alumno/a"),
+      row.some(
+        (cell) => String(cell).trim() === "Alumno/a",
+      ),
     );
 
     if (headerRowIndex === -1) {
@@ -66,66 +102,163 @@ const StudentPrioritizer = () => {
 
     const headers = rows[headerRowIndex];
 
-    // Βρίσκουμε δυναμικά τις στήλες ονόματος και βαθμού.
     const nameColumnIndex = headers.findIndex(
       (header) => String(header).trim() === "Alumno/a",
     );
 
-    const gradeColumnIndex = headers.findIndex(
-      (header) => String(header).trim() === "Nota",
+    let gradeColumnIndex = headers.findIndex(
+      (header) => String(header).trim() === "Nota final",
     );
 
-    // Κρατάμε μόνο headers της μορφής 1.1, 2.3, 5.2 κλπ.
+    if (gradeColumnIndex === -1) {
+      gradeColumnIndex = headers.findIndex(
+        (header) => String(header).trim() === "Nota",
+      );
+    }
+
     const criterionColumns = headers
       .map((header, index) => ({
         name: String(header).trim(),
         index,
       }))
-      .filter((column) => /^\d+\.\d+$/.test(column.name));
-
-    // Διαβάζουμε μόνο τις γραμμές κάτω από τα headers.
-    const parsedStudents = rows
-      .slice(headerRowIndex + 1)
-      .map((row) => {
-        const criteriaGroups: Record<string, Criterion[]> = {};
-
-        criterionColumns.forEach((column) => {
-          // Το πρώτο ψηφίο καθορίζει την ομάδα: 1, 2, 3 κλπ.
-          const group = column.name.split(".")[0];
-
-          if (!criteriaGroups[group]) {
-            criteriaGroups[group] = [];
-          }
-
-          criteriaGroups[group].push({
-            name: column.name,
-            grade: row[column.index],
-          });
-        });
-
-        return {
-          name: row[nameColumnIndex],
-          grade: row[gradeColumnIndex],
-          criteriaGroups,
-        };
-      })
-      .filter(
-        (student) =>
-          student.name !== undefined &&
-          student.name !== null &&
-          student.name !== "",
+      .filter((column) =>
+        /^\d+\.\d+$/.test(column.name),
       );
 
-    // Μικρό debug μόνο για τον πρώτο μαθητή.
-    console.log("FIRST STUDENT:", parsedStudents[0]);
+    const parsedStudents: Student[] = rows
+      .slice(headerRowIndex + 1)
+      .map((row) => ({
+        name: String(row[nameColumnIndex] ?? "").trim(),
 
-    // Η αλλαγή του state προκαλεί νέο render της λίστας.
+        finalGrade:
+          gradeColumnIndex === -1
+            ? null
+            : parseNumber(row[gradeColumnIndex]),
+
+        criteria: criterionColumns.map((column) => ({
+          name: column.name,
+          grade: parseNumber(row[column.index]),
+        })),
+      }))
+      .filter((student) => student.name !== "");
+
+    console.log("PARSED STUDENTS:", parsedStudents);
+
     setStudents(parsedStudents);
+  };
+
+  const saveSnapshot = async () => {
+    if (students.length === 0) {
+      setMessage("Δεν υπάρχουν μαθητές.");
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setMessage("Δεν βρέθηκε token. Κάνε πρώτα login.");
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      setMessage("");
+      setPrioritizedStudents([]);
+
+      const response = await fetch(`${API_URL}/snapshot`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: COURSE_NAME,
+          schoolYear: SCHOOL_YEAR,
+          students,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.message ?? "Αποτυχία αποθήκευσης.",
+        );
+      }
+
+      setCourseId(result.data._id);
+      setMessage("Το snapshot αποθηκεύτηκε επιτυχώς.");
+    } catch (error) {
+      console.error(error);
+
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Παρουσιάστηκε σφάλμα.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const prioritizeStudents = async () => {
+    if (!courseId) {
+      setMessage("Αποθήκευσε πρώτα το snapshot.");
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setMessage("Δεν βρέθηκε token.");
+      return;
+    }
+
+    try {
+      setIsPrioritizing(true);
+      setMessage("");
+
+      const response = await fetch(
+        `${API_URL}/${courseId}/prioritize`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.message ?? "Αποτυχία προτεραιοποίησης.",
+        );
+      }
+
+      setPrioritizedStudents(result.data);
+      setMessage("Η λίστα προτεραιότητας δημιουργήθηκε.");
+    } catch (error) {
+      console.error(error);
+
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Παρουσιάστηκε σφάλμα.",
+      );
+    } finally {
+      setIsPrioritizing(false);
+    }
   };
 
   return (
     <main className="flex min-h-[calc(100vh-64px)] flex-col items-center px-6 py-10 text-white">
-      <h1 className="mb-6 text-3xl font-bold">Student Prioritizer</h1>
+      <h1 className="mb-2 text-3xl font-bold">
+        Student Prioritizer
+      </h1>
+
+      <p className="mb-6 text-zinc-400">
+        {COURSE_NAME} — {SCHOOL_YEAR}
+      </p>
 
       <input
         type="file"
@@ -135,58 +268,126 @@ const StudentPrioritizer = () => {
       />
 
       {students.length > 0 && (
-        <section className="mt-8 w-full max-w-3xl">
-          <h2 className="mb-4 text-xl font-semibold">Students</h2>
+        <div className="mt-6 flex gap-3">
+          <button
+            type="button"
+            onClick={saveSnapshot}
+            disabled={isSaving}
+            className="rounded-lg bg-green-600 px-5 py-2 font-semibold hover:bg-green-700 disabled:opacity-50"
+          >
+            {isSaving
+              ? "Saving..."
+              : "Save snapshot"}
+          </button>
 
-          <ul className="space-y-4">
-            {students.map((student, studentIndex) => (
+          <button
+            type="button"
+            onClick={prioritizeStudents}
+            disabled={!courseId || isPrioritizing}
+            className="rounded-lg bg-blue-600 px-5 py-2 font-semibold hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isPrioritizing
+              ? "Prioritizing..."
+              : "Prioritize students"}
+          </button>
+        </div>
+      )}
+
+      {message && (
+        <p className="mt-4 text-center">{message}</p>
+      )}
+
+      {prioritizedStudents.length > 0 && (
+        <section className="mt-10 w-full max-w-4xl">
+          <h2 className="mb-4 text-2xl font-bold">
+            Prioritized students
+          </h2>
+
+          <ol className="space-y-4">
+            {prioritizedStudents.map((student, index) => (
               <li
-                key={studentIndex}
+                key={`${student.name}-${index}`}
                 className="rounded-lg border border-zinc-700 bg-zinc-900 px-5 py-4"
               >
-                <h3 className="text-xl font-bold">
-                  {formatValue(student.name)}
-                </h3>
+                <div className="flex items-start gap-4">
+                  <span className="text-2xl font-bold text-blue-400">
+                    {index + 1}
+                  </span>
 
-                <p className="mt-1 font-semibold text-blue-300">
-                  Grade: {formatValue(student.grade)}
-                </p>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold">
+                      {student.name}
+                    </h3>
 
-                <div className="mt-4 space-y-2">
-                  {Object.entries(student.criteriaGroups)
-                    .sort(
-                      ([groupA], [groupB]) =>
-                        Number(groupA) - Number(groupB),
-                    )
-                    .map(([group, criteria]) => (
-                      <div key={group} className="flex gap-3">
-                        <span className="font-bold text-zinc-400">
-                          {group}.
-                        </span>
+                    <div className="mt-2 flex flex-wrap gap-4 text-sm">
+                      <span>
+                        Final grade:{" "}
+                        {formatValue(student.finalGrade)}
+                      </span>
 
-                        <p>
-                          {criteria
-                            .sort((a, b) =>
-                              a.name.localeCompare(b.name, undefined, {
-                                numeric: true,
-                              }),
-                            )
-                            .map(
-                              (criterion) =>
-                                `${criterion.name}: ${formatValue(
-                                  criterion.grade,
-                                )}`,
-                            )
-                            .join(" - ")}
-                        </p>
-                      </div>
-                    ))}
+                      <span>
+                        Estimated exams:{" "}
+                        {student.estimatedExamCount}
+                      </span>
+
+                      <span>
+                        Priority score:{" "}
+                        {student.priorityScore}
+                      </span>
+                    </div>
+
+                    {student.notes.length > 0 && (
+                      <ul className="mt-3 list-inside list-disc text-yellow-300">
+                        {student.notes.map((note, noteIndex) => (
+                          <li key={noteIndex}>{note}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 </div>
               </li>
             ))}
-          </ul>
+          </ol>
         </section>
       )}
+
+      {students.length > 0 &&
+        prioritizedStudents.length === 0 && (
+          <section className="mt-8 w-full max-w-3xl">
+            <h2 className="mb-4 text-xl font-semibold">
+              Students ({students.length})
+            </h2>
+
+            <ul className="space-y-4">
+              {students.map((student, studentIndex) => (
+                <li
+                  key={`${student.name}-${studentIndex}`}
+                  className="rounded-lg border border-zinc-700 bg-zinc-900 px-5 py-4"
+                >
+                  <h3 className="text-xl font-bold">
+                    {student.name}
+                  </h3>
+
+                  <p className="mt-1 font-semibold text-blue-300">
+                    Grade:{" "}
+                    {formatValue(student.finalGrade)}
+                  </p>
+
+                  <p className="mt-4">
+                    {student.criteria
+                      .map(
+                        (criterion) =>
+                          `${criterion.name}: ${formatValue(
+                            criterion.grade,
+                          )}`,
+                      )
+                      .join(" - ")}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
     </main>
   );
 };

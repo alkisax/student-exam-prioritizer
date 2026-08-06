@@ -3,7 +3,6 @@
 import type {
   ICourse,
   IStudentCourseData,
-  ICriterion,
 } from "./course.types";
 
 interface PrioritizedStudent extends IStudentCourseData {
@@ -11,33 +10,20 @@ interface PrioritizedStudent extends IStudentCourseData {
   notes: string[];
 }
 
-const normalizeCriteria = (
-  criteria: unknown,
-): Record<string, ICriterion> => {
-  if (criteria instanceof Map) {
-    return Object.fromEntries(criteria);
-  }
-
-  return criteria as Record<string, ICriterion>;
-};
-
 const prioritizeStudent = (
   student: IStudentCourseData,
 ): PrioritizedStudent => {
   let priorityScore = 0;
   const notes: string[] = [];
 
-  const criteria = normalizeCriteria(student.criteria);
-  const criterionEntries = Object.entries(criteria);
-
-  const examinedCriteria = criterionEntries.filter(
-    ([, criterion]) =>
+  const examinedCriteria = student.criteria.filter(
+    (criterion) =>
       criterion.grade !== null &&
       criterion.grade !== undefined,
   );
 
-  const missingCriteria = criterionEntries.filter(
-    ([, criterion]) =>
+  const missingCriteria = student.criteria.filter(
+    (criterion) =>
       criterion.grade === null ||
       criterion.grade === undefined,
   );
@@ -50,18 +36,23 @@ const prioritizeStudent = (
     priorityScore += 1000;
     notes.push("has not been examined");
   } else {
-    // Προσθέτουμε προτεραιότητα για κάθε κριτήριο που λείπει.
-    missingCriteria.forEach(([criterionName]) => {
+    // Προτεραιότητα για κάθε κριτήριο που λείπει.
+    missingCriteria.forEach((criterion) => {
       priorityScore += 100;
-      notes.push(`has not been examined in ${criterionName}`);
+      notes.push(
+        `has not been examined in ${criterion.name}`,
+      );
     });
 
     // Οι πολλές εξετάσεις μειώνουν την προτεραιότητα.
     priorityScore -= student.estimatedExamCount * 10;
   }
 
-  // Ο χαμηλός βαθμός αυξάνει την προτεραιότητα.
-  if (student.finalGrade !== null && student.finalGrade < 5) {
+  // Χαμηλός γενικός βαθμός.
+  if (
+    student.finalGrade !== null &&
+    student.finalGrade < 5
+  ) {
     priorityScore += (5 - student.finalGrade) * 20;
     notes.push("needs to improve");
   }
@@ -83,8 +74,6 @@ const prioritizeCourse = (
     .map(prioritizeStudent)
     .map((student) => ({
       ...student,
-
-      // Προσωρινή τυχαία τιμή για ισοβαθμίες.
       randomTieBreaker: Math.random(),
     }))
     .sort((studentA, studentB) => {
@@ -94,7 +83,7 @@ const prioritizeCourse = (
 
       return studentA.randomTieBreaker - studentB.randomTieBreaker;
     })
-    .map(({ randomTieBreaker: _randomTieBreaker, ...student }) => student);
+    .map(({ randomTieBreaker: _unused, ...student }) => student);
 };
 
 export const coursePrioritizeService = {

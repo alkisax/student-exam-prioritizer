@@ -10,7 +10,7 @@ import type {
 interface IncomingStudent {
   name: string;
   finalGrade: number | null;
-  criteria: Record<string, ICriterion>;
+  criteria: ICriterion[];
 }
 
 interface SaveCourseSnapshotInput {
@@ -20,45 +20,42 @@ interface SaveCourseSnapshotInput {
   students: IncomingStudent[];
 }
 
-// Μετατρέπει τα criteria σε απλό object, είτε έρχονται ως Map είτε ως object.
-const normalizeCriteria = (
-  criteria: unknown,
-): Record<string, ICriterion> => {
-  if (criteria instanceof Map) {
-    return Object.fromEntries(criteria);
-  }
-
-  if (criteria && typeof criteria === "object") {
-    return criteria as Record<string, ICriterion>;
-  }
-
-  return {};
-};
-
-// Ελέγχει αν ένας μαθητής έχει τουλάχιστον έναν βαθμό κριτηρίου.
-const hasAnyCriterionGrade = (
-  criteria: Record<string, ICriterion>,
-): boolean => {
-  return Object.values(criteria).some(
+// Ελέγχει αν υπάρχει τουλάχιστον ένας βαθμός κριτηρίου.
+const hasAnyCriterionGrade = (criteria: ICriterion[]): boolean => {
+  return criteria.some(
     (criterion) =>
       criterion.grade !== null &&
       criterion.grade !== undefined,
   );
 };
 
-// Ελέγχει αν άλλαξε τουλάχιστον ένα κριτήριο του μαθητή.
+// Ελέγχει αν άλλαξε έστω ένα κριτήριο.
 const haveCriteriaChanged = (
-  oldCriteria: Record<string, ICriterion>,
-  newCriteria: Record<string, ICriterion>,
+  oldCriteria: ICriterion[],
+  newCriteria: ICriterion[],
 ): boolean => {
+  const oldCriteriaMap = new Map(
+    oldCriteria.map((criterion) => [
+      criterion.name,
+      criterion.grade ?? null,
+    ]),
+  );
+
+  const newCriteriaMap = new Map(
+    newCriteria.map((criterion) => [
+      criterion.name,
+      criterion.grade ?? null,
+    ]),
+  );
+
   const allCriterionNames = new Set([
-    ...Object.keys(oldCriteria),
-    ...Object.keys(newCriteria),
+    ...oldCriteriaMap.keys(),
+    ...newCriteriaMap.keys(),
   ]);
 
   return [...allCriterionNames].some((criterionName) => {
-    const oldGrade = oldCriteria[criterionName]?.grade ?? null;
-    const newGrade = newCriteria[criterionName]?.grade ?? null;
+    const oldGrade = oldCriteriaMap.get(criterionName) ?? null;
+    const newGrade = newCriteriaMap.get(criterionName) ?? null;
 
     return oldGrade !== newGrade;
   });
@@ -74,7 +71,7 @@ const saveSnapshot = async (
     input.schoolYear,
   );
 
-  // Αν είναι το πρώτο upload, δημιουργούμε το μάθημα.
+  // Πρώτο upload: δημιουργούμε το μάθημα.
   if (!existingCourse) {
     const students: IStudentCourseData[] = input.students.map(
       (student) => ({
@@ -87,7 +84,7 @@ const saveSnapshot = async (
       }),
     );
 
-    return await courseDAO.create({
+    return courseDAO.create({
       teacherId: input.teacherId,
       name: input.name,
       schoolYear: input.schoolYear,
@@ -95,7 +92,7 @@ const saveSnapshot = async (
     });
   }
 
-  // Δημιουργούμε Map ώστε να βρίσκουμε γρήγορα τον προηγούμενο μαθητή.
+  // Βρίσκουμε γρήγορα τον παλιό μαθητή με βάση το όνομα.
   const oldStudentsMap = new Map(
     existingCourse.students.map((student) => [
       student.name.trim().toLowerCase(),
@@ -108,7 +105,7 @@ const saveSnapshot = async (
       const studentKey = newStudent.name.trim().toLowerCase();
       const oldStudent = oldStudentsMap.get(studentKey);
 
-      // Νέος μαθητής που δεν υπήρχε στο προηγούμενο snapshot.
+      // Νέος μαθητής.
       if (!oldStudent) {
         return {
           name: newStudent.name,
@@ -122,9 +119,8 @@ const saveSnapshot = async (
         };
       }
 
-      const oldCriteria = normalizeCriteria(oldStudent.criteria);
       const changed = haveCriteriaChanged(
-        oldCriteria,
+        oldStudent.criteria,
         newStudent.criteria,
       );
 
@@ -133,15 +129,15 @@ const saveSnapshot = async (
         finalGrade: newStudent.finalGrade,
         criteria: newStudent.criteria,
 
-        // Αν άλλαξε έστω ένα criterion, αυξάνεται μόνο κατά 1.
+        // Πολλά αλλαγμένα criteria στο ίδιο upload σημαίνουν μία εξέταση.
         estimatedExamCount:
           oldStudent.estimatedExamCount + (changed ? 1 : 0),
       };
     },
   );
 
-  // Αντικαθιστούμε το προηγούμενο snapshot με το νέο.
-  return await courseDAO.updateById(
+  // Αντικαθιστούμε την παλιά εικόνα με τη νέα.
+  return courseDAO.updateById(
     existingCourse._id.toString(),
     input.teacherId,
     {

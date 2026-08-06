@@ -1,4 +1,4 @@
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhNzJlMTdkMWRjNDgxZTFhMzJiOTVlYiIsInVzZXJuYW1lIjoiYW50b25pbyIsIm5hbWUiOiJBbnRvbmlvIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzg2MDAyMzE3LCJleHAiOjE3ODYwMDU5MTd9.BMQrhFNwkNHufoud0VzBu7qzE_GoZyiqK3bBE9VMrU8
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhNzJlMTdkMWRjNDgxZTFhMzJiOTVlYiIsInVzZXJuYW1lIjoiYW50b25pbyIsIm5hbWUiOiJBbnRvbmlvIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzg2MDAyNzk0LCJleHAiOjE3ODYwMDYzOTR9.0vz68WD6Fs6Til09CJvBnpdKKbnq6uILJz8DLnMnsN0
 
 ### Login
 POST http://localhost:3019/api/auth/login
@@ -330,5 +330,5 @@ Authorization: Bearer {{token}}
 
 ### 4. Prioritize
 ### Αντικατάστησε το COURSE_ID με το id των Αρχαίων Ελληνικών
-GET http://localhost:3019/api/courses/6a743bcb8c1df8a41db9e638/prioritize
+GET http://localhost:3019/api/courses/6a743d8301b4ac4bd10fcaac/prioritize
 Authorization: Bearer {{token}}

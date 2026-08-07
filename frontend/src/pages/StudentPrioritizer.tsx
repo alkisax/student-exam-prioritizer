@@ -107,7 +107,7 @@ const StudentPrioritizer = () => {
     );
 
     let gradeColumnIndex = headers.findIndex(
-      (header) => String(header).trim() === "Nota final",
+      (header) => String(header).trim() === "Nota",
     );
 
     if (gradeColumnIndex === -1) {

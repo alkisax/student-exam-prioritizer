@@ -14,32 +14,19 @@ import {
 import MenuIcon from "@mui/icons-material/Menu";
 import LoginIcon from "@mui/icons-material/Login";
 import LogoutIcon from "@mui/icons-material/Logout";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import InfoIcon from "@mui/icons-material/Info";
-import ChatIcon from "@mui/icons-material/Chat";
-import Badge from "@mui/material/Badge";
 
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useState } from "react";
 
 import { UserAuthContext } from "../../authLogin/context/UserAuthContext";
 import { handleLogout } from "../../authLogin/authFunctions";
-// import ChatPanel from "../../components/chat/ChatPanel";
 
 const Navbar = () => {
   const { user, setUser } = useContext(UserAuthContext);
   const navigate = useNavigate();
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [unreadChatCount, setUnreadChatCount] = useState(0);
-  const isChatOpenRef = useRef(isChatOpen);
-
-  useEffect(() => {
-    isChatOpenRef.current = isChatOpen;
-  }, [isChatOpen]);
-
   const handleMenuOpen = (e: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(e.currentTarget);
   };
@@ -49,30 +36,8 @@ const Navbar = () => {
   };
 
   const handleLogoutClick = () => {
-    setIsChatOpen(false);
     handleLogout(setUser, navigate);
   };
-
-  const handleChatToggle = () => {
-    handleMenuClose();
-    setIsChatOpen((prev) => {
-      const next = !prev;
-      if (next) {
-        setUnreadChatCount(0);
-      }
-      return next;
-    });
-  };
-
-  // const handleChatClose = () => {
-  //   setIsChatOpen(false);
-  // };
-
-  // const handleChatIncomingMessage = () => {
-  //   if (!isChatOpenRef.current) {
-  //     setUnreadChatCount((prev) => prev + 1);
-  //   }
-  // };
 
   return (
     <>
@@ -109,54 +74,15 @@ const Navbar = () => {
               </IconButton>
             </Tooltip>
 
-            {user?.roles?.includes("ADMIN") && (
-              <Tooltip title="dashboard">
+            {user ? (
+              <Tooltip title="Logout">
                 <IconButton
-                  component={NavLink}
-                  to="/dashboard"
+                  onClick={handleLogoutClick}
                   sx={{ color: "inherit" }}
                 >
-                  <AdminPanelSettingsIcon />
+                  <LogoutIcon />
                 </IconButton>
               </Tooltip>
-            )}
-
-            {user ? (
-              <>
-                <Tooltip title="Chat">
-                  <IconButton
-                    onClick={handleChatToggle}
-                    sx={{ color: "inherit" }}
-                  >
-                    <Badge
-                      badgeContent={unreadChatCount}
-                      color="error"
-                      invisible={unreadChatCount === 0}
-                    >
-                      <ChatIcon />
-                    </Badge>
-                  </IconButton>
-                </Tooltip>
-
-                <Tooltip title="Profile">
-                  <IconButton
-                    component={NavLink}
-                    to="/user"
-                    sx={{ color: "inherit" }}
-                  >
-                    <AccountCircleIcon />
-                  </IconButton>
-                </Tooltip>
-
-                <Tooltip title="Logout">
-                  <IconButton
-                    onClick={handleLogoutClick}
-                    sx={{ color: "inherit" }}
-                  >
-                    <LogoutIcon />
-                  </IconButton>
-                </Tooltip>
-              </>
             ) : (
               <Tooltip title="Login">
                 <IconButton
@@ -169,26 +95,6 @@ const Navbar = () => {
               </Tooltip>
             )}
           </Box>
-
-          {/* MOBILE CHAT ICON - outside hamburger */}
-          {user && (
-            <Box sx={{ display: { xs: "flex", sm: "none" } }}>
-              <Tooltip title="Chat">
-                <IconButton
-                  onClick={handleChatToggle}
-                  sx={{ color: "inherit" }}
-                >
-                  <Badge
-                    badgeContent={unreadChatCount}
-                    color="error"
-                    invisible={unreadChatCount === 0}
-                  >
-                    <ChatIcon />
-                  </Badge>
-                </IconButton>
-              </Tooltip>
-            </Box>
-          )}
 
           {/* MOBILE HAMBURGER */}
           <Box sx={{ display: { xs: "flex", sm: "none" } }}>
@@ -204,26 +110,6 @@ const Navbar = () => {
               <MenuItem component={NavLink} to="/" onClick={handleMenuClose}>
                 Info
               </MenuItem>
-
-              {user?.roles?.includes("ADMIN") && (
-                <MenuItem
-                  component={NavLink}
-                  to="/dashboard"
-                  onClick={handleMenuClose}
-                >
-                  dashboard
-                </MenuItem>
-              )}
-
-              {user && (
-                <MenuItem
-                  component={NavLink}
-                  to="/user"
-                  onClick={handleMenuClose}
-                >
-                  Profile
-                </MenuItem>
-              )}
 
               {user ? (
                 <MenuItem
@@ -247,14 +133,6 @@ const Navbar = () => {
           </Box>
         </Toolbar>
       </AppBar>
-
-      {/* {user && (
-        <ChatPanel
-          isOpen={isChatOpen}
-          onClose={handleChatClose}
-          onIncomingMessage={handleChatIncomingMessage}
-        />
-      )} */}
 
       {/* offset για να μη σκεπάζει το fixed navbar το περιεχόμενο */}
       <Toolbar />

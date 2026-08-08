@@ -1,5 +1,4 @@
 // frontend\src\constants\constants.ts
-export const url = `${import.meta.env.VITE_API_URL}/api/astro/calculate`;
 export const backendUrl =  import.meta.env.VITE_BACKEND_URL || "http://localhost:3019";
 
 export const colors = {

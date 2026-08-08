@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
+import { backendUrl } from "../constants/constants";
 
 interface Criterion {
   name: string;
@@ -26,7 +27,7 @@ interface Course {
   schoolYear: string;
 }
 
-const API_URL = "http://localhost:3019/api/courses";
+const API_URL = `${backendUrl}/api/courses`;
 
 const parseNumber = (value: unknown): number | null => {
   if (value === undefined || value === null || value === "") {

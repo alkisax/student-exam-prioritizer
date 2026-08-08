@@ -57,7 +57,15 @@ git branch
 ```
 αφου κάνω git add . \ commit -m "" \ push origin wip μετα κάνω merge με
 ```bash
+git add .
+git commit -m "codex changes"
+git push origin wip
+
 git switch main
 git merge wip
 git checkout wip
 ```
+
+
+Token usage: total=70.650 input=61.846 (+ 1.293.568 cached) output=8.804 (reasoning 591)
+To continue this session, run codex resume 019fe2a1-03c2-7bd0-9594-48b8a38340dc

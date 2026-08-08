@@ -9,7 +9,7 @@ const Layout = () => {
         minHeight: '100vh',
         backgroundRepeat: 'no-repeat',
         backgroundSize: '100% auto',
-        backgroundColor: 'black',
+        backgroundColor: 'var(--app-background)',
       }}
     >
       <Navbar />

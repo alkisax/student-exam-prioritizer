@@ -69,7 +69,7 @@ const Navbar = () => {
           {/* DESKTOP */}
           <Box sx={{ display: { xs: "none", sm: "flex" }, gap: 2 }}>
             <Tooltip title="Info">
-              <IconButton component={NavLink} to="/" sx={{ color: "inherit" }}>
+              <IconButton component={NavLink} to="/info" sx={{ color: "inherit" }}>
                 <InfoIcon />
               </IconButton>
             </Tooltip>
@@ -107,7 +107,7 @@ const Navbar = () => {
               open={Boolean(anchorEl)}
               onClose={handleMenuClose}
             >
-              <MenuItem component={NavLink} to="/" onClick={handleMenuClose}>
+              <MenuItem component={NavLink} to="/info" onClick={handleMenuClose}>
                 Info
               </MenuItem>
 

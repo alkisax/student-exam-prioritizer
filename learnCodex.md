@@ -55,3 +55,9 @@ codex login
 git switch -c wip
 git branch
 ```
+αφου κάνω git add . \ commit -m "" \ push origin wip μετα κάνω merge με
+```bash
+git switch main
+git merge wip
+git checkout wip
+```

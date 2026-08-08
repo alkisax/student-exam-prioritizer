@@ -15,6 +15,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import LoginIcon from "@mui/icons-material/Login";
 import LogoutIcon from "@mui/icons-material/Logout";
 import InfoIcon from "@mui/icons-material/Info";
+import SchoolIcon from "@mui/icons-material/School";
 
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useContext, useState } from "react";
@@ -75,14 +76,26 @@ const Navbar = () => {
             </Tooltip>
 
             {user ? (
-              <Tooltip title="Logout">
-                <IconButton
-                  onClick={handleLogoutClick}
-                  sx={{ color: "inherit" }}
-                >
-                  <LogoutIcon />
-                </IconButton>
-              </Tooltip>
+              <>
+                <Tooltip title="Student Prioritizer">
+                  <IconButton
+                    component={NavLink}
+                    to="/student-prioritizer"
+                    sx={{ color: "inherit" }}
+                  >
+                    <SchoolIcon />
+                  </IconButton>
+                </Tooltip>
+
+                <Tooltip title="Logout">
+                  <IconButton
+                    onClick={handleLogoutClick}
+                    sx={{ color: "inherit" }}
+                  >
+                    <LogoutIcon />
+                  </IconButton>
+                </Tooltip>
+              </>
             ) : (
               <Tooltip title="Login">
                 <IconButton
@@ -110,6 +123,16 @@ const Navbar = () => {
               <MenuItem component={NavLink} to="/info" onClick={handleMenuClose}>
                 Info
               </MenuItem>
+
+              {user && (
+                <MenuItem
+                  component={NavLink}
+                  to="/student-prioritizer"
+                  onClick={handleMenuClose}
+                >
+                  Student Prioritizer
+                </MenuItem>
+              )}
 
               {user ? (
                 <MenuItem

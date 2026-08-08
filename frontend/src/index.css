@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  --app-background: #1f1f1f;
   --text: #6b6375;
   --text-h: #08060d;
   --bg: #fff;
@@ -66,5 +67,5 @@
 
 body {
   margin: 0;
+  background-color: var(--app-background);
 }
-

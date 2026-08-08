@@ -72,8 +72,10 @@ cd /var/www/student-exam-prioritizer \
 && cd ../frontend && npm install && npm run build \
 && cd ../backend && pm2 restart student-prioritizer-backend --update-env \
 && nginx -t && systemctl reload nginx \
+&& sleep 3 \
+&& curl -f https://student-prioritizer.portfolio-projects.space/api/ping \
+&& echo "" \
 && echo "✓ student prioritizer deploy OK" \
-&& curl https://student-prioritizer.portfolio-projects.space/api/ping \
 && echo ""
 ```
 

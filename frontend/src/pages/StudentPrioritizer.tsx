@@ -556,12 +556,12 @@ const StudentPrioritizer = () => {
 
       {/* CREATE NEW COURSE */}
 
-      <div className="mt-5 w-full max-w-2xl rounded-lg border border-zinc-700 bg-zinc-900 p-5">
+      <div className="mt-5 w-full max-w-2xl rounded-lg border border-zinc-700 bg-zinc-900 p-4 sm:p-5">
         <h2 className="mb-4 text-xl font-semibold">
           Create new course
         </h2>
 
-        <div className="flex gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row">
           <input
             type="text"
             value={newYear}
@@ -569,7 +569,7 @@ const StudentPrioritizer = () => {
               setNewYear(event.target.value)
             }
             placeholder="2026-2027"
-            className="flex-1 rounded-lg border border-zinc-600 bg-zinc-800 px-4 py-2"
+            className="w-full min-w-0 rounded-lg border border-zinc-600 bg-zinc-800 px-4 py-2 sm:flex-1"
           />
 
           <input
@@ -579,14 +579,14 @@ const StudentPrioritizer = () => {
               setNewCourseName(event.target.value)
             }
             placeholder="Course name"
-            className="flex-1 rounded-lg border border-zinc-600 bg-zinc-800 px-4 py-2"
+            className="w-full min-w-0 rounded-lg border border-zinc-600 bg-zinc-800 px-4 py-2 sm:flex-1"
           />
 
           <button
             type="button"
             onClick={createCourse}
             disabled={isCreatingCourse}
-            className="rounded-lg bg-purple-600 px-5 py-2 font-semibold hover:bg-purple-700 disabled:opacity-50"
+            className="w-full rounded-lg bg-purple-600 px-5 py-2 font-semibold hover:bg-purple-700 disabled:opacity-50 sm:w-auto"
           >
             {isCreatingCourse
               ? "Creating..."

@@ -63,6 +63,7 @@ git push origin wip
 
 git switch main
 git merge wip
+git push origin main
 git checkout wip
 ```
 

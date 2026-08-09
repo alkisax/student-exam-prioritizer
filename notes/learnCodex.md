@@ -67,6 +67,4 @@ git push origin main
 git checkout wip
 ```
 
-
-Token usage: total=70.650 input=61.846 (+ 1.293.568 cached) output=8.804 (reasoning 591)
 To continue this session, run codex resume 019fe2a1-03c2-7bd0-9594-48b8a38340dc

@@ -16,16 +16,20 @@ import LoginIcon from "@mui/icons-material/Login";
 import LogoutIcon from "@mui/icons-material/Logout";
 import InfoIcon from "@mui/icons-material/Info";
 import SchoolIcon from "@mui/icons-material/School";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
+import LightModeIcon from "@mui/icons-material/LightMode";
 
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useContext, useState } from "react";
 
 import { UserAuthContext } from "../../authLogin/context/UserAuthContext";
 import { handleLogout } from "../../authLogin/authFunctions";
+import { useTheme } from "../../theme/ThemeContext";
 
 const Navbar = () => {
   const { user, setUser } = useContext(UserAuthContext);
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const handleMenuOpen = (e: React.MouseEvent<HTMLElement>) => {
@@ -45,9 +49,9 @@ const Navbar = () => {
       <AppBar
         position="fixed"
         sx={{
-          backgroundColor: "#fffdf7",
-          color: "#4a3f35",
-          borderBottom: "1px solid #e5e0d8",
+          backgroundColor: "var(--surface)",
+          color: "var(--text-heading)",
+          borderBottom: "1px solid var(--border)",
         }}
       >
         <Toolbar>
@@ -69,6 +73,11 @@ const Navbar = () => {
 
           {/* DESKTOP */}
           <Box sx={{ display: { xs: "none", sm: "flex" }, gap: 2 }}>
+            <Tooltip title={theme === "light" ? "Dark mode" : "Light mode"}>
+              <IconButton onClick={toggleTheme} aria-label="Toggle color theme" sx={{ color: "inherit" }}>
+                {theme === "light" ? <DarkModeIcon /> : <LightModeIcon />}
+              </IconButton>
+            </Tooltip>
             <Tooltip title="Info">
               <IconButton component={NavLink} to="/info" sx={{ color: "inherit" }}>
                 <InfoIcon />
@@ -120,6 +129,9 @@ const Navbar = () => {
               open={Boolean(anchorEl)}
               onClose={handleMenuClose}
             >
+              <MenuItem onClick={() => { toggleTheme(); handleMenuClose(); }}>
+                {theme === "light" ? "Dark mode" : "Light mode"}
+              </MenuItem>
               <MenuItem component={NavLink} to="/info" onClick={handleMenuClose}>
                 Info
               </MenuItem>

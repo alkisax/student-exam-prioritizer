@@ -68,3 +68,5 @@ git checkout wip
 ```
 
 To continue this session, run codex resume 019fe2a1-03c2-7bd0-9594-48b8a38340dc
+
+# IDE codex

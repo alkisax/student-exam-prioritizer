@@ -1,57 +1,55 @@
-import { Box, Container, Paper, Typography } from "@mui/material";
+import { Box, Container, Paper, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
+import { useState } from "react";
+
+type Language = "es" | "el" | "eo" | "en";
+type Copy = { name: string; title: string; intro: string; sections: { title: string; paragraphs: string[]; list?: string[] }[]; snapshot: string; score: string[]; files: string; final: string };
+
+const codeBlockSx = { display: "block", overflowX: "auto", p: 2, mt: 1, mb: 2, borderRadius: 2, backgroundColor: "#27231f", color: "#f7e7c6", fontFamily: "monospace", fontSize: "0.85rem", lineHeight: 1.6, whiteSpace: "pre" as const };
+const codeSnippets = [
+  [
+    "const criterionColumns = headers",
+    "  .map((header, index) => ({ name: String(header).trim(), index }))",
+    "  .filter((column) => /^\\d+\\.\\d+$/.test(column.name));",
+  ].join("\n"),
+  [
+    "const changed = haveCriteriaChanged(",
+    "  oldStudent.criteria,",
+    "  newStudent.criteria,",
+    ");",
+    "",
+    "estimatedExamCount:",
+    "  oldStudent.estimatedExamCount + (changed ? 1 : 0);",
+  ].join("\n"),
+  [
+    "if (estimatedExamCount === 0 || examinedCriteria.length === 0) {",
+    "  priorityScore += 1000;",
+    "} else {",
+    "  priorityScore += missingCriteria.length * 100;",
+    "  priorityScore -= estimatedExamCount * 10;",
+    "}",
+    "",
+    "if (finalGrade !== null && finalGrade < 5) {",
+    "  priorityScore += (5 - finalGrade) * 20;",
+    "}",
+  ].join("\n"),
+];
+
+const copy: Record<Language, Copy> = {
+  es: { name: "Español", title: "Guía de uso de Student Prioritizer", intro: "La aplicación crea un orden propuesto y justificado para examinar a los estudiantes. Es una herramienta de apoyo para el profesor, no una decisión pedagógica automática.", sections: [{ title: "1. Proceso básico", paragraphs: ["Siga estos pasos:", "Puede subir un nuevo Excel cada semana o cuando tenga lugar una nueva evaluación. El snapshot sustituye la lista actual del curso, pero conserva el número estimado de exámenes."], list: ["Inicie sesión.", "Si el curso no existe, créelo con año escolar y nombre. Se guarda en MongoDB.", "Si ya existen cursos, seleccione el año y después el curso.", "Seleccione el archivo Excel de la evaluación actual.", "Revise la vista previa y pulse Save snapshot.", "Pulse Prioritize students para obtener el orden."] }, { title: "2. Uso del Excel", paragraphs: ["Se aceptan archivos .xlsx y .xls. Solo se lee la primera hoja y se encuentra la fila de encabezados mediante Alumno/a.", "Las celdas vacías o no numéricas significan que falta una nota. Se aceptan punto y coma como separador decimal.", "No cambie los títulos ni la estructura: Alumno/a identifica al estudiante, Nota la nota final y las columnas número.número (1.1, 2.3...) los criterios." ] }, { title: "3. Nombres y número de exámenes", paragraphs: ["El nombre es la clave para comparar con el snapshot anterior. Se ignoran mayúsculas/minúsculas y espacios exteriores, pero no una escritura diferente. Mantenga los nombres iguales en cada Excel.", "En el primer snapshot el estudiante empieza con 1 examen si tiene alguna nota de criterio, y con 0 en caso contrario. En los siguientes, cualquier cambio, adición o eliminación de criterio aumenta el contador en uno; varios cambios en una carga cuentan como un examen."] }, { title: "4. Cálculo de la prioridad", paragraphs: ["Cada estudiante recibe un priorityScore. Cuanto mayor sea, más arriba aparece en la lista."] }], snapshot: "El número de exámenes es una estimación, no un registro de asistencia. No detecta una evaluación con exactamente las mismas notas; se acepta porque la clasificación es orientativa y el caso es poco frecuente.", score: ["+1000 si nunca fue examinado o no tiene ninguna nota de criterio.", "+100 por cada criterio sin nota.", "-10 × número de exámenes anteriores.", "+(5 - nota final) × 20 si la nota final es menor que 5."], files: "Snapshots: backend/src/course/course.service.ts · Algoritmo: backend/src/course/course.prioritize.service.ts", final: "La prioridad es una indicación para organizar mejor la evaluación. La decisión final corresponde al profesor." },
+  el: { name: "Ελληνικά", title: "Οδηγίες χρήσης Student Prioritizer", intro: "Η εφαρμογή δημιουργεί μια αιτιολογημένη, προτεινόμενη σειρά εξέτασης μαθητών. Είναι βοηθητικό εργαλείο και όχι αυτόματη παιδαγωγική απόφαση.", sections: [{ title: "1. Βασική διαδικασία", paragraphs: ["Ακολουθήστε τα εξής βήματα:", "Μπορείτε να ανεβάζετε νέο Excel κάθε εβδομάδα ή όποτε γίνεται νέος έλεγχος. Το snapshot αντικαθιστά την τρέχουσα λίστα, αλλά διατηρεί το εκτιμώμενο πλήθος εξετάσεων."], list: ["Συνδεθείτε.", "Αν δεν υπάρχει το μάθημα, δημιουργήστε το με έτος και όνομα. Αποθηκεύεται στη MongoDB.", "Αν υπάρχουν μαθήματα, επιλέξτε έτος και μετά μάθημα.", "Επιλέξτε το Excel του τρέχοντος ελέγχου.", "Ελέγξτε την προεπισκόπηση και πατήστε Save snapshot.", "Πατήστε Prioritize students για τη σειρά."] }, { title: "2. Χρήση Excel", paragraphs: ["Υποστηρίζονται .xlsx και .xls. Διαβάζεται μόνο το πρώτο φύλλο και η γραμμή επικεφαλίδων εντοπίζεται από το Alumno/a.", "Κενές ή μη αριθμητικές τιμές σημαίνουν απουσία βαθμού. Επιτρέπονται τελεία και κόμμα ως δεκαδικά.", "Μην αλλάζετε τίτλους ή δομή: το Alumno/a είναι ο μαθητής, το Nota ο γενικός βαθμός και οι στήλες αριθμός.αριθμός (1.1, 2.3...) τα κριτήρια." ] }, { title: "3. Ονόματα και εξετάσεις", paragraphs: ["Το όνομα είναι το κλειδί σύγκρισης με το παλιό snapshot. Αγνοούνται κεφαλαία/πεζά και εξωτερικά κενά, όχι διαφορετική γραφή. Κρατήστε τα ονόματα ίδια.", "Στο πρώτο snapshot ο μαθητής ξεκινά με 1 εξέταση αν έχει βαθμό κριτηρίου, αλλιώς 0. Σε επόμενα snapshot κάθε αλλαγή, προσθήκη ή αφαίρεση κριτηρίου αυξάνει τον αριθμό κατά μία. Πολλές αλλαγές στο ίδιο upload μετρούν ως μία."] }, { title: "4. Υπολογισμός προτεραιότητας", paragraphs: ["Κάθε μαθητής παίρνει priorityScore. Όσο μεγαλύτερο είναι, τόσο ψηλότερα εμφανίζεται."] }], snapshot: "Ο αριθμός εξετάσεων είναι προσέγγιση και όχι παρουσιολόγιο. Δεν ανιχνεύεται εξέταση με ακριβώς ίδιους βαθμούς· το δεχόμαστε επειδή η κατάταξη είναι βοηθητική και το περιστατικό σπάνιο.", score: ["+1000 αν δεν εξετάστηκε ή δεν έχει κανέναν βαθμό κριτηρίου.", "+100 για κάθε κριτήριο χωρίς βαθμό.", "-10 × πλήθος προηγούμενων εξετάσεων.", "+(5 - γενικός βαθμός) × 20 αν ο βαθμός είναι κάτω από 5."], files: "Snapshots: backend/src/course/course.service.ts · Αλγόριθμος: backend/src/course/course.prioritize.service.ts", final: "Η προτεραιότητα είναι ένδειξη για καλύτερη οργάνωση. Η τελική απόφαση παραμένει στον εκπαιδευτικό." },
+  eo: { name: "Esperanto", title: "Gvidilo pri Student Prioritizer", intro: "La aplikaĵo kreas motivitan proponitan ordon por ekzameni studentojn. Ĝi estas helpilo por la instruisto, ne aŭtomata pedagogia decido.", sections: [{ title: "1. Baza procedo", paragraphs: ["Sekvu ĉi tiujn paŝojn:", "Alŝutu novan Excel ĉiusemajne aŭ kiam okazas nova taksado. La snapshot anstataŭas la nunan liston, sed konservas la taksitan ekzamenan nombron."], list: ["Ensalutu.", "Se la kurso ne ekzistas, kreu ĝin kun jaro kaj nomo. Ĝi estas konservata en MongoDB.", "Se kursoj ekzistas, elektu jaron kaj poste kurson.", "Elektu la Excel-dosieron de la nuna taksado.", "Kontrolu la antaŭrigardon kaj premu Save snapshot.", "Premu Prioritize students por la ordo."] }, { title: "2. Uzado de Excel", paragraphs: ["Akceptataj estas .xlsx kaj .xls. Nur la unua folio estas legata kaj la kaplinio estas trovata per Alumno/a.", "Malplenaj aŭ ne-numeraj valoroj signifas mankantan noton. Punkto kaj komo estas akceptataj.", "Ne ŝanĝu titolojn aŭ strukturon: Alumno/a estas la studento, Nota la fina noto, kaj numero.numero (1.1, 2.3...) la kriterioj." ] }, { title: "3. Nomoj kaj ekzamenoj", paragraphs: ["La nomo estas la ŝlosilo por komparo kun la antaŭa snapshot. Majuskloj/minuskloj kaj ĉirkaŭaj spacoj estas ignorataj, sed malsama literumo ne. Konservu la nomojn samaj.", "En la unua snapshot studento komencas kun 1 ekzameno se kriterio havas noton, alie 0. Poste ĉiu ŝanĝo, aldono aŭ forigo de kriterio pliigas la nombron je unu. Pluraj ŝanĝoj en unu alŝuto estas unu ekzameno."] }, { title: "4. Prioritata kalkulo", paragraphs: ["Ĉiu studento ricevas priorityScore. Pli alta poentaro signifas pli altan pozicion."] }], snapshot: "La ekzamenkvanto estas takso, ne ĉeestregistro. Ekzameno kun tute samaj notoj ne estas detektata; tio estas akceptebla ĉar la rangigo estas helpa kaj la kazo maloftas.", score: ["+1000 sen ekzameno aŭ kriterinoto.", "+100 por ĉiu mankanta kriterio.", "-10 × nombro de antaŭaj ekzamenoj.", "+(5 - fina noto) × 20 kiam la fina noto estas sub 5."], files: "Snapshots: backend/src/course/course.service.ts · Algoritmo: backend/src/course/course.prioritize.service.ts", final: "La prioritato helpas organizi la ekzamenon. La fina decido restas ĉe la instruisto." },
+  en: { name: "English", title: "Student Prioritizer user guide", intro: "The application creates a justified suggested order for examining students. It supports the teacher and is not an automatic pedagogical decision.", sections: [{ title: "1. Basic process", paragraphs: ["Follow these steps:", "Upload a new Excel weekly or whenever a new assessment occurs. The snapshot replaces the current list but keeps estimated exam counts."], list: ["Sign in.", "If the course does not exist, create it with year and name. It is stored in MongoDB.", "If courses exist, select the year and then the course.", "Choose the Excel file for the current assessment.", "Review the preview and press Save snapshot.", "Press Prioritize students to get the order."] }, { title: "2. Using Excel", paragraphs: ["The app accepts .xlsx and .xls. It reads only the first sheet and finds the header row through Alumno/a.", "Empty or non-numeric values mean a missing grade. Dot and comma decimals are accepted.", "Do not change titles or structure: Alumno/a identifies the student, Nota the final grade, and number.number columns (1.1, 2.3...) the criteria." ] }, { title: "3. Names and exam count", paragraphs: ["The name is the key used to compare the previous snapshot. Case and surrounding spaces are ignored, but different spelling is not. Keep names consistent.", "In the first snapshot a student starts with 1 exam if any criterion has a grade, otherwise 0. Later, any criterion change, addition, or removal increases the count by one. Multiple changes in one upload count as one exam."] }, { title: "4. Priority calculation", paragraphs: ["Each student receives a priorityScore. A higher score means a higher position."] }], snapshot: "This is an estimate, not an attendance register. An exam with exactly identical grades is not detected; this is acceptable because the ranking is advisory and the case is rare.", score: ["+1000 if never examined or no criterion grade exists.", "+100 for each missing criterion grade.", "-10 × previous exam count.", "+(5 - final grade) × 20 when the final grade is below 5."], files: "Snapshots: backend/src/course/course.service.ts · Algorithm: backend/src/course/course.prioritize.service.ts", final: "Priority is guidance for better organization. The final decision remains with the teacher." },
+};
 
 const Info = () => {
-  return (
-    <Container maxWidth="md" sx={{ py: 6 }}>
-      <Paper
-        elevation={0}
-        sx={{
-          p: { xs: 3, sm: 5 },
-          backgroundColor: "#fffdf7",
-          color: "#4a3f35",
-          border: "1px solid #e5e0d8",
-          borderRadius: 3,
-          textAlign: "left",
-        }}
-      >
-        <Typography component="h1" variant="h4" sx={{ fontWeight: "bold", mb: 2 }}>
-          About Student Prioritizer
-        </Typography>
-
-        <Typography component="p" sx={{ mb: 2 }}>
-          Student Prioritizer helps teachers organize which students should be
-          examined next, based on their available assessment data.
-        </Typography>
-
-        <Box component="section" sx={{ mt: 3 }}>
-          <Typography component="h2" variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
-            How it works
-          </Typography>
-          <Typography component="p" sx={{ mb: 2 }}>
-            Teachers can import student grades from an Excel file and save them
-            for a course and school year. The application then produces a
-            suggested order of examination.
-          </Typography>
-        </Box>
-
-        <Box component="section" sx={{ mt: 3 }}>
-          <Typography component="h2" variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
-            How priority is calculated
-          </Typography>
-          <Typography component="p" sx={{ mb: 2 }}>
-            Higher priority is given to students who have not yet been examined,
-            have missing assessment criteria, or may need improvement. Students
-            who have already been examined several times receive lower priority.
-          </Typography>
-        </Box>
-
-        <Typography sx={{ mt: 3, fontStyle: "italic" }}>
-          The generated ranking is a supporting tool and does not replace the
-          teacher&apos;s professional judgment.
-        </Typography>
-      </Paper>
-    </Container>
-  );
+  const [language, setLanguage] = useState<Language>("es");
+  const t = copy[language];
+  return <Container maxWidth="md" sx={{ py: 5 }}><Paper elevation={0} sx={{ p: { xs: 2.5, sm: 5 }, backgroundColor: "#fffdf7", color: "#4a3f35", border: "1px solid #e5e0d8", borderRadius: 3, textAlign: "left" }}>
+    <ToggleButtonGroup value={language} exclusive fullWidth sx={{ mb: 4 }} onChange={(_, value: Language | null) => value && setLanguage(value)}>{(Object.keys(copy) as Language[]).map((key) => <ToggleButton key={key} value={key}>{copy[key].name}</ToggleButton>)}</ToggleButtonGroup>
+    <Typography component="h1" variant="h4" sx={{ fontWeight: "bold", mb: 2 }}>{t.title}</Typography><Typography component="p" sx={{ mb: 3 }}>{t.intro}</Typography>
+    {t.sections.map((section, index) => <Box component="section" sx={{ mt: 4 }} key={section.title}><Typography component="h2" variant="h5" sx={{ fontWeight: "bold", mb: 1 }}>{section.title}</Typography>{section.paragraphs.map((p) => <Typography component="p" sx={{ mb: 2 }} key={p}>{p}</Typography>)}{section.list && <Box component="ol" sx={{ pl: 3, mb: 2 }}>{section.list.map((item) => <li key={item}>{item}</li>)}</Box>}{index > 0 && index < 4 && <Box component="pre" sx={codeBlockSx}>{codeSnippets[index - 1]}</Box>}</Box>)}
+    <Typography component="p" sx={{ mt: 3 }}>{t.snapshot}</Typography><Box component="ul" sx={{ pl: 3 }}>{t.score.map((item) => <li key={item}>{item}</li>)}</Box><Typography component="p" sx={{ fontSize: "0.9rem", fontStyle: "italic" }}>{t.files}</Typography><Typography sx={{ mt: 4, pt: 2, borderTop: "1px solid #e5e0d8", fontStyle: "italic" }}>{t.final}</Typography>
+  </Paper></Container>;
 };
 
 export default Info;
